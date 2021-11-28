@@ -15,8 +15,8 @@ from locust import HttpUser, task
 
 
 FORM_UID = "ufCT4fdO"
-SMALL_FILE = open("assets/small.txt", "r")
-IMAGE_FILE = open("assets/image.png", "r")
+SMALL_FILE = "assets/small.txt"
+IMAGE_FILE = "assets/image.png"
 
 
 class KoboUser(HttpUser):
@@ -52,11 +52,11 @@ class KoboUser(HttpUser):
         file_input = form_soup.find("form").find("input", {"type": "file"})
         file_input_name = file_input["name"].split("/")[-1]
 
-        file = SMALL_FILE
-        file_name = os.path.basename(file.name)
-        answer_xml = self._build_form_xml(form_id, file_input_name, file_name)
+        with open(SMALL_FILE, "rb") as file:
+            file_name = os.path.basename(file.name)
+            answer_xml = self._build_form_xml(form_id, file_input_name, file_name)
 
-        resp = self.client.post(self.form_submit_url, files={"xml_submission_file": answer_xml, file_name: file})
+            resp = self.client.post(self.form_submit_url, files={"xml_submission_file": answer_xml, file_name: file})
     
     def _get_form_id(self, form_soup):
         return form_soup.find("form")["data-form-id"]
