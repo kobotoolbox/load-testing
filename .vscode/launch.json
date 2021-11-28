@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Locust",
+            "type": "python",
+            "request": "launch",
+            "module": "locust",
+            "args": [
+                "-f",
+                "${file}"
+            ],
+            "gevent": true,
+            "console": "integratedTerminal"
+        }
+    ]
+}
