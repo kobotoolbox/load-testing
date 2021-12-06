@@ -1,4 +1,4 @@
-This is an internal project for performing load testing on kobotoolbox components (kpi, kobocat, enkeno).
+This is an internal project for performing load testing on kobotoolbox components (kpi, kobocat, enketo).
 
 # Running with docker
 
@@ -12,6 +12,13 @@ This is an internal project for performing load testing on kobotoolbox component
 
 # Using
 
+You'll need the Enketo FORM ID and an API Token. Set these as environment variables. If using docker compose:
+
+`cp docker-compose.yaml docker-compose.override.yaml`
+
+Edit FORM_UID (found in the enketo survey URL) and API_TOKEN (Found in KPI account settings)
+
+- Start the server (docker-compose up)
 - Go to http://0.0.0.0:8089/
 - Enter web address of kobo enketo instance
 

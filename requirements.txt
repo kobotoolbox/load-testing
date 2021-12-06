@@ -78,7 +78,11 @@ pygments==2.10.0
 pyzmq==22.3.0
     # via locust
 requests==2.26.0
-    # via locust
+    # via
+    #   locust
+    #   requests-toolbelt
+requests-toolbelt==0.9.1
+    # via -r requirements.in
 roundrobin==0.0.2
     # via locust
 six==1.16.0
