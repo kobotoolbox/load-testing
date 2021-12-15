@@ -17,8 +17,10 @@ from requests_toolbelt.multipart import encoder
 from locust import HttpUser, task
 
 
-FORM_UID = os.getenv("FORM_UID")
-API_TOKEN = os.getenv("API_TOKEN")
+FORM_UID = os.getenv("FORM_UID", "")
+API_TOKEN = os.getenv("API_TOKEN", "")
+KPI_SUBDOMAIN = os.getenv("KPI_SUBDOMAIN", "kf")
+ENKETO_SUBDOMAIN = os.getenv("ENKETO_SUBDOMAIN", "ee")
 
 SMALL_FILE = "assets/small.txt"
 IMAGE_FILE = "assets/image.png"
@@ -36,7 +38,7 @@ class KoboUser(HttpUser):
 
         # Extract form enkeno ID and first input info
         form = self.client.post(self.form_transform_url)
-        form_soup = BeautifulSoup(form.json()["form"])
+        form_soup = self._form_response_to_soup(form)
         form_id = self._get_form_id(form_soup)
         first_input = form_soup.find("form").find("fieldset").find("fieldset").find("input")
         first_input_name = first_input["name"].split("/")[-1]
@@ -52,7 +54,7 @@ class KoboUser(HttpUser):
 
         form = self.client.post(self.form_transform_url)
 
-        form_soup = BeautifulSoup(form.json()["form"])
+        form_soup = self._form_response_to_soup(form)
         form_id = self._get_form_id(form_soup)
         file_input = form_soup.find("form").find("input", {"type": "file"})
         file_input_name = file_input["name"].split("/")[-1]
@@ -66,12 +68,11 @@ class KoboUser(HttpUser):
     @task(10)
     def collect_many_file_uploads(self):
         """ Simulate a slow connection with larger file """
-        print("collect many file uploads")
         self._simulate_unnecessary_interactions()
 
         form = self.client.post(self.form_transform_url)
 
-        form_soup = BeautifulSoup(form.json()["form"])
+        form_soup = self._form_response_to_soup(form)
         form_id = self._get_form_id(form_soup)
         file_input = form_soup.find("form").find("input", {"type": "file"})
         file_input_name = file_input["name"].split("/")[-1]
@@ -99,7 +100,7 @@ class KoboUser(HttpUser):
         Waiting for celery will make this task run a long time.
         """
         form = self.client.post(self.form_transform_url)
-        form_soup = BeautifulSoup(form.json()["form"])
+        form_soup = self._form_response_to_soup(form)
         form_id = self._get_form_id(form_soup)
         
         url = f"/api/v2/assets/{form_id}/exports/"
@@ -140,7 +141,7 @@ class KoboUser(HttpUser):
     def delete_all_submissions(self):
         """ Important to keep the test consistent by preventing data building up """
         form = self.client.post(self.form_transform_url)
-        form_soup = BeautifulSoup(form.json()["form"])
+        form_soup = self._form_response_to_soup(form)
         form_id = self._get_form_id(form_soup)
         url = f"/api/v2/assets/{form_id}/data/bulk/"
         data = {"payload": json.dumps({"confirm": True})}
@@ -152,7 +153,7 @@ class KoboUser(HttpUser):
         resp = self.client.delete(url, data=data, headers=headers)
     
     def _get_kpi_url(self):
-        return urlparse(self.client.base_url).netloc.replace("enketo", "kpi")
+        return urlparse(self.client.base_url).netloc.replace(ENKETO_SUBDOMAIN, KPI_SUBDOMAIN)
 
     def _get_form_id(self, form_soup):
         return form_soup.find("form")["data-form-id"]
@@ -164,6 +165,10 @@ class KoboUser(HttpUser):
         """
         self.client.get(self.form_detail_url)
         self.client.get(self.check_connection_url)
+
+    def _form_response_to_soup(self, response):
+        """Parse response json using BeautifulSoup"""
+        return BeautifulSoup(response.json()["form"], features="html.parser")
 
     def _build_form_xml(self, form_id, name, value) -> bytes:
         """ Build submission xml file with specified name/value """
