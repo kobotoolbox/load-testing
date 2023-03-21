@@ -10,4 +10,4 @@ services:
     environment:
       FORM_UID: ""
       API_TOKEN: ""
-
+      ENKETO_HOST: ""

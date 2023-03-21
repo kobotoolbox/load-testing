@@ -12,6 +12,9 @@ This is an internal project for performing load testing on kobotoolbox component
 
 # Using
 
+
+Create a form with 1 input field and 1 file input field.
+
 You'll need the Enketo FORM ID and an API Token. Set these as environment variables. If using docker compose:
 
 `cp docker-compose.yaml docker-compose.override.yaml`

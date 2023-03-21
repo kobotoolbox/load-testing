@@ -5,17 +5,17 @@
     Fetch data endpoint with sort field for an asset with lots of submissions (> 30 K) (KPI)
     Fetch assets endpoint for an account with lots of assets (> 100) (KPI)
 """
-import uuid
+import json
 import os
 import time
-import json
-from urllib.parse import urlparse
-from datetime import datetime
-from bs4 import BeautifulSoup
+import uuid
 import xml.etree.cElementTree as ET
-from requests_toolbelt.multipart import encoder
-from locust import HttpUser, task
+from datetime import datetime
+from urllib.parse import urlparse
 
+from bs4 import BeautifulSoup
+from locust import HttpUser, task, run_single_user
+from requests_toolbelt.multipart import encoder
 
 FORM_UID = os.getenv("FORM_UID", "")
 API_TOKEN = os.getenv("API_TOKEN", "")
@@ -27,27 +27,33 @@ IMAGE_FILE = "assets/image.png"
 
 
 class KoboUser(HttpUser):
+    host = os.getenv("ENKETO_HOST", None)
+
     form_detail_url = f"/x/{FORM_UID}"
     form_transform_url = f"/transform/xform/{FORM_UID}"
     check_connection_url = "/connection"
     form_submit_url = f"/submission/{FORM_UID}"
 
     @task(20)
-    def collect_data_simple(self):        
+    def collect_data_simple(self):
         self._simulate_unnecessary_interactions()
 
         # Extract form enkeno ID and first input info
         form = self.client.post(self.form_transform_url)
         form_soup = self._form_response_to_soup(form)
         form_id = self._get_form_id(form_soup)
-        first_input = form_soup.find("form").find("fieldset").find("fieldset").find("input")
+        first_input = (
+            form_soup.find("form").find("fieldset").find("fieldset").find("input")
+        )
         first_input_name = first_input["name"].split("/")[-1]
         first_input_value = first_input["value"]
 
         answer_xml = self._build_form_xml(form_id, first_input_name, first_input_value)
-        
-        resp = self.client.post(self.form_submit_url, files=dict(xml_submission_file=answer_xml))
-    
+
+        resp = self.client.post(
+            self.form_submit_url, files=dict(xml_submission_file=answer_xml)
+        )
+
     @task(10)
     def collect_file_upload(self):
         self._simulate_unnecessary_interactions()
@@ -63,11 +69,14 @@ class KoboUser(HttpUser):
             file_name = os.path.basename(file.name)
             answer_xml = self._build_form_xml(form_id, file_input_name, file_name)
 
-            resp = self.client.post(self.form_submit_url, files={"xml_submission_file": answer_xml, file_name: file})
+            resp = self.client.post(
+                self.form_submit_url,
+                files={"xml_submission_file": answer_xml, file_name: file},
+            )
 
     @task(10)
     def collect_many_file_uploads(self):
-        """ Simulate a slow connection with larger file """
+        """Simulate a slow connection with larger file"""
         self._simulate_unnecessary_interactions()
 
         form = self.client.post(self.form_transform_url)
@@ -86,12 +95,19 @@ class KoboUser(HttpUser):
 
             e = encoder.MultipartEncoder(
                 fields={
-                    'xml_submission_file': ('xml_submission_file', answer_xml, 'text/xml'),
-                    file_name: (file_name, file, 'image/png')}
-                )
+                    "xml_submission_file": (
+                        "xml_submission_file",
+                        answer_xml,
+                        "text/xml",
+                    ),
+                    file_name: (file_name, file, "image/png"),
+                }
+            )
             m = encoder.MultipartEncoderMonitor(e, my_callback)
 
-            resp = self.client.post(self.form_submit_url, data=m, headers={'Content-Type': m.content_type})
+            resp = self.client.post(
+                self.form_submit_url, data=m, headers={"Content-Type": m.content_type}
+            )
 
     @task(2)
     def export_submissions_xls(self):
@@ -102,7 +118,7 @@ class KoboUser(HttpUser):
         form = self.client.post(self.form_transform_url)
         form_soup = self._form_response_to_soup(form)
         form_id = self._get_form_id(form_soup)
-        
+
         url = f"/api/v2/assets/{form_id}/exports/"
         data = {
             "fields_from_all_versions": True,
@@ -113,10 +129,10 @@ class KoboUser(HttpUser):
             "multiple_select": "both",
             "type": "xls",
             "xls_types_as_text": False,
-            "include_media_url": True
+            "include_media_url": True,
         }
         headers = {
-            'Authorization': 'Token ' + API_TOKEN,
+            "Authorization": "Token " + API_TOKEN,
             "Accept": "application/json",
             "Host": self._get_kpi_url(),
         }
@@ -129,31 +145,38 @@ class KoboUser(HttpUser):
         i = 0
         while status == "processing":
             time.sleep(2)
-            with self.client.get(export_url, headers=headers, name=f"{url}[export_id]/", catch_response=True) as resp:
+            with self.client.get(
+                export_url,
+                headers=headers,
+                name=f"{url}[export_id]/",
+                catch_response=True,
+            ) as resp:
                 status = resp.json().get("status")
                 i += 1
                 if i > 15:
                     resp.failure("took too long to generate xls file")
                 if status not in ["complete", "processing"]:
                     raise resp.failure("xls export failed")
-    
+
     @task(1)
     def delete_all_submissions(self):
-        """ Important to keep the test consistent by preventing data building up """
+        """Important to keep the test consistent by preventing data building up"""
         form = self.client.post(self.form_transform_url)
         form_soup = self._form_response_to_soup(form)
         form_id = self._get_form_id(form_soup)
         url = f"/api/v2/assets/{form_id}/data/bulk/"
         data = {"payload": json.dumps({"confirm": True})}
         headers = {
-            'Authorization': 'Token ' + API_TOKEN,
+            "Authorization": "Token " + API_TOKEN,
             "Accept": "application/json",
             "Host": self._get_kpi_url(),
         }
         resp = self.client.delete(url, data=data, headers=headers)
-    
+
     def _get_kpi_url(self):
-        return urlparse(self.client.base_url).netloc.replace(ENKETO_SUBDOMAIN, KPI_SUBDOMAIN)
+        return urlparse(self.client.base_url).netloc.replace(
+            ENKETO_SUBDOMAIN, KPI_SUBDOMAIN
+        )
 
     def _get_form_id(self, form_soup):
         return form_soup.find("form")["data-form-id"]
@@ -171,15 +194,19 @@ class KoboUser(HttpUser):
         return BeautifulSoup(response.json()["form"], features="html.parser")
 
     def _build_form_xml(self, form_id, name, value) -> bytes:
-        """ Build submission xml file with specified name/value """
+        """Build submission xml file with specified name/value"""
         root = ET.Element(form_id, id=form_id)
         formhub = ET.SubElement(root, "formhub")
         ET.SubElement(formhub, "uuid").text = uuid.uuid4().hex
 
-        now = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+        now = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
         ET.SubElement(root, "start").text = now
         ET.SubElement(root, "end").text = now
 
         ET.SubElement(root, name).text = value
 
         return ET.tostring(ET.ElementTree(root).getroot())
+
+
+if __name__ == "__main__":
+    run_single_user(KoboUser)
