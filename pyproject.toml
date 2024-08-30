@@ -8,8 +8,8 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-locust = "^2.15.1"
-requests-toolbelt = "^0.10.1"
+locust = "^2.31.4"
+requests-toolbelt = "^1.0.0"
 ipdb = "^0.13.13"
 beautifulsoup4 = "^4.12.0"
 

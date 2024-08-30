@@ -1,4 +1,4 @@
-FROM python:3.11
+FROM python:3.12
 ENV PYTHONUNBUFFERED=1 \
   POETRY_VIRTUALENVS_CREATE=false \
   POETRY_HOME=/opt/poetry \
