@@ -1,9 +1,9 @@
-This is an internal project for performing load testing on kobotoolbox components (kpi, kobocat, enketo).
+This is an internal project for performing load testing on kobotoolbox components (kpi, enketo).
 
 # Running with docker
 
-- `docker-compose build`
-- `docker-compose up`
+- `docker compose up`
+- `docker compose build`
 
 # Running without docker
 
@@ -11,7 +11,6 @@ This is an internal project for performing load testing on kobotoolbox component
 - `locust`
 
 # Using
-
 
 Create a form with 1 input field and 1 file input field.
 
