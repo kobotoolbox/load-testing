@@ -1,10 +1,11 @@
 """
-  X Save lots of submission entries (KoBoCAT)
-  X Save long submission uploads (submission with lots of attachments) (KoBoCAT)
-  X Export XLS with lots of submissions (> 100K) (KPI - Celery)
-    Fetch data endpoint with sort field for an asset with lots of submissions (> 30 K) (KPI)
-    Fetch assets endpoint for an account with lots of assets (> 100) (KPI)
+X Save lots of submission entries (KoBoCAT)
+X Save long submission uploads (submission with lots of attachments) (KoBoCAT)
+X Export XLS with lots of submissions (> 100K) (KPI - Celery)
+  Fetch data endpoint with sort field for an asset with lots of submissions (> 30 K) (KPI)
+  Fetch assets endpoint for an account with lots of assets (> 100) (KPI)
 """
+
 import json
 import os
 import time
@@ -12,6 +13,8 @@ import uuid
 import xml.etree.cElementTree as ET
 from datetime import datetime
 from urllib.parse import urlparse
+import random
+import string
 
 from bs4 import BeautifulSoup
 from locust import HttpUser, task, run_single_user
@@ -24,6 +27,24 @@ ENKETO_SUBDOMAIN = os.getenv("ENKETO_SUBDOMAIN", "ee")
 
 SMALL_FILE = "assets/small.txt"
 IMAGE_FILE = "assets/image.png"
+
+
+def generate_semi_random_string(size: int) -> str:
+    # Step 1: Pre-generate a smaller random string
+    small_random_string = "".join(
+        random.choices(string.ascii_letters + string.digits, k=1024)
+    )  # 1 KB
+
+    # Step 2: Repeat this string to approximate the desired size
+    repeat_count = size // len(small_random_string)
+    large_string = small_random_string * repeat_count
+
+    # Step 3: Shuffle parts of the large string to introduce more randomness
+    large_string = list(large_string)
+    random.shuffle(large_string)
+
+    # Convert back to string
+    return "".join(large_string)
 
 
 class KoboUser(HttpUser):
@@ -42,11 +63,9 @@ class KoboUser(HttpUser):
         form = self.client.post(self.form_transform_url)
         form_soup = self._form_response_to_soup(form)
         form_id = self._get_form_id(form_soup)
-        first_input = (
-            form_soup.find("form").find("fieldset").find("fieldset").find("input")
-        )
+        first_input = form_soup.find("form").find("input")
         first_input_name = first_input["name"].split("/")[-1]
-        first_input_value = first_input["value"]
+        first_input_value = generate_semi_random_string(100000)
 
         answer_xml = self._build_form_xml(form_id, first_input_name, first_input_value)
 
@@ -109,7 +128,7 @@ class KoboUser(HttpUser):
                 self.form_submit_url, data=m, headers={"Content-Type": m.content_type}
             )
 
-    @task(2)
+    # @task(2)
     def export_submissions_xls(self):
         """
         Request an export, wait for it's completion.
@@ -158,7 +177,7 @@ class KoboUser(HttpUser):
                 if status not in ["complete", "processing"]:
                     raise resp.failure("xls export failed")
 
-    @task(1)
+    # @task(1)
     def delete_all_submissions(self):
         """Important to keep the test consistent by preventing data building up"""
         form = self.client.post(self.form_transform_url)
