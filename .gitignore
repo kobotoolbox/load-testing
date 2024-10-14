@@ -145,3 +145,7 @@ cython_debug/
 # End of https://www.toptal.com/developers/gitignore/api/python
 
 docker-compose.override.yaml
+
+# Added by cargo
+
+/target
