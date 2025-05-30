@@ -1,0 +1,15 @@
+services:
+  locust-worker: &locust
+    build: .
+    volumes:
+      - .:/code/
+    env_file:
+      - .env
+
+  locust-master:
+    <<: *locust
+    ports:
+      - "8089:8089"
+      - "5557:5557"
+    environment:
+      - IS_MASTER=True

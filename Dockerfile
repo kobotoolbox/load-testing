@@ -4,8 +4,10 @@ ENV PYTHONUNBUFFERED=1 \
   POETRY_HOME=/opt/poetry \
   PIP_DISABLE_PIP_VERSION_CHECK=on
 
-WORKDIR /code
+WORKDIR /app
 RUN curl -sSL https://install.python-poetry.org | python3 -
-COPY poetry.lock pyproject.toml /code/
-RUN $POETRY_HOME/bin/poetry install --no-interaction --no-ansi $(test "$IS_CI" = "True" && echo "--no-dev")
+COPY . /app/
+RUN $POETRY_HOME/bin/poetry config virtualenvs.create false \
+ && $POETRY_HOME/bin/poetry install --no-root --no-interaction --no-ansi $(test "$IS_CI" = "True" && echo "--no-dev")
 
+ENTRYPOINT ["bash", "/app/entrypoint.sh"]

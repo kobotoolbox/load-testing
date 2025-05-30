@@ -1,0 +1,11 @@
+<{{PROJECT_UID}} xmlns:jr="http://openrosa.org/javarosa" xmlns:orx="http://openrosa.org/xforms" id="{{PROJECT_UID}}" version="1">
+<text>{{text}}</text>
+{{images}}
+<meta>
+<instanceID>uuid:{{submission_uuid}}</instanceID>
+</meta>
+<formhub>
+<uuid>{{form_uuid}}</uuid>
+</formhub>
+<__version__>{{version_uid}}</__version__>
+</{{PROJECT_UID}}>

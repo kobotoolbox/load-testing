@@ -16,7 +16,7 @@ Create a form with 1 input field and 1 file input field.
 
 You'll need the Enketo FORM ID and an API Token. Set these as environment variables. If using docker compose:
 
-`cp docker-compose.yaml docker-compose.override.yaml`
+`cp docker-compose.yml docker-compose.override.yml`
 
 Edit FORM_UID (found in the enketo survey URL) and API_TOKEN (Found in KPI account settings)
 
