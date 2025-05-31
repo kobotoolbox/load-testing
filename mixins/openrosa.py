@@ -53,7 +53,6 @@ class OpenRosaMixin:
             files = self._get_attachment_files()
             groups = self._group_files_from_upload(files)
             xml_content = self._inject_images_in_xml(files, xml_content)
-            print(xml_content)
 
             # Submit each group with retry logic
             for i, group in enumerate(groups, start=1):
