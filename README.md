@@ -72,6 +72,57 @@ MASTER_IP=1.2.3.4
 LOCUST_TAGS=tag1,tag2,tag3
 ```
 
+#### Distributed Mode
+
+This project is preconfigured to run Locust in **distributed mode** using Docker Compose.  
+The `docker-compose.yml` file includes two services:
+
+- `master`: runs the Locust web interface and coordinates test execution
+- `worker`: executes user tasks and sends results back to the master
+
+> The master instance runs Locust’s web interface and tells the workers when to spawn/stop users.  
+> The worker instances run your users and send statistics back to the master.  
+> The master instance itself does **not** run any users.
+
+_Source: https://docs.locust.io/en/stable/running-distributed.html_
+
+##### Network requirements
+
+- The machine running the `master` must have the following ports open:
+  - `8089`: for accessing the Locust web interface
+  - `5557`: for communication between master and workers
+
+##### Scaling workers
+
+If you need additional load generation capacity:
+
+- Clone this repository on each worker machine
+- Use the same `.env` file as the master
+- Start only the `worker` service on the remote machine:
+
+```bash
+docker compose up worker
+```
+
+##### Multi-core CPU support
+
+> Due to Python’s Global Interpreter Lock (GIL), a single worker process can only use one CPU core effectively.  
+> To fully utilize multi-core systems, you should run one worker per CPU core.
+
+To scale workers on a multi-core machine, use:
+
+```bash
+docker compose up --scale worker=<desired_number>
+```
+
+For example, on a 4-core machine:
+
+```bash
+docker compose up --scale worker=4
+```
+
+
+
 ### Tags
 
 - `all`: Run all tests.
