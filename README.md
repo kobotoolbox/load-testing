@@ -26,7 +26,7 @@ locust
   cp .env.sample .env
   ```
 
-- Open the `assets/` directory and locate the provided XLSX form file.
+- Open the `assets/` directory and locate the provided [XLSX form](./assets/form.xlsx) file.
 
 - On the KoboToolbox instance you want to test, create a new project by importing this XLSX form and deploy it.
 
@@ -37,7 +37,7 @@ locust
 
 #### 2. Generate Environment Variables
 
-From a Django shell on the instance (e.g. `./manage.py shell`), run:
+From a Django shell on the instance (e.g. `./manage.py shell_plus`), run:
 
 ```python
 import os
@@ -101,7 +101,7 @@ If you need additional load generation capacity:
 - Start only the `worker` service on the remote machine:
 
 ```bash
-docker compose up worker
+docker compose up locust-worker
 ```
 
 ##### Multi-core CPU support
@@ -112,7 +112,7 @@ docker compose up worker
 To scale workers on a multi-core machine, use:
 
 ```bash
-docker compose up --scale worker=<desired_number>
+docker compose up --scale locust-worker=<desired_number>
 ```
 
 For example, on a 4-core machine:
