@@ -36,6 +36,11 @@ class KoboUser(EnketoMixin, KpiMixin, OpenRosaMixin, HttpUser):
     def export_submissions_xls(self):
         self.task_export_submissions_xls()
 
+    @task(2)
+    @tag('all', 'kpi', 'sync_export')
+    def sync_export_submissions_xlsx(self):
+        self.task_sync_export_submissions_xlsx()
+
     @task(1)
     @tag('all', 'kpi')
     def delete_all_submissions(self):

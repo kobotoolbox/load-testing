@@ -2,7 +2,7 @@ services:
   locust-worker: &locust
     build: .
     volumes:
-      - .:/code/
+      - .:/app/
     env_file:
       - .env
 
